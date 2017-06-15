@@ -7,7 +7,7 @@ var got = require('got')
 var pkg = require('../package.json')
 var jsonServer = require('../src')
 
-updateNotifier({packageName: pkg.name, packageVersion: pkg.version}).notify()
+updateNotifier({packageName: pkg.name, packageVersion: pkg.version}).notify() // update notifier to ?
 
 // Parse arguments
 var argv = yargs
