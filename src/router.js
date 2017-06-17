@@ -2,19 +2,19 @@ var express = require('express')
 var methodOverride = require('method-override')
 var bodyParser = require('body-parser')
 var _ = require('underscore')
-var low = require('lowdb')
+var low = require('lowdb') // database
 var utils = require('./utils')
 
-low.mixin(require('underscore-db'))
+low.mixin(require('underscore-db')) // why uderscore-db, mix this method
 low.mixin(require('underscore.inflections'))
-low.mixin({
+low.mixin({ // uuid ?
   createId: utils.createId
 })
 
 module.exports = function (source) {
 
   // Create router
-  var router = express.Router()
+  var router = express.Router();
 
   // Add middlewares
   router.use(bodyParser.json({
@@ -23,11 +23,11 @@ module.exports = function (source) {
   router.use(bodyParser.urlencoded({
     extended: false
   }))
-  router.use(methodOverride())
+  router.use(methodOverride()) // support PUT/GET
 
   // Create database
   if (_.isObject(source)) {
-    var db = low()
+    var db = low()  // export the db
     db.object = source
   } else {
     var db = low(source)
@@ -71,7 +71,7 @@ module.exports = function (source) {
     // parameters. Attach to req._internal for use by future middleware
     req._internal._start = req.query._start
     req._internal._end = req.query._end
-    req._internal._sort = req.query._sort
+    req._internal._sort = req.query._sort // sort method DSC/ASC
     req._internal._order = req.query._order
     req._internal._limit = req.query._limit
     delete req.query._start
@@ -152,15 +152,15 @@ module.exports = function (source) {
 
   // GET /:resource/:id
   function find(req, res, next) {
-    if (req.query.q) {
+    if (req.query.q) { // determined query
 
       // Full-text search
-      var q = req.query.q.toLowerCase()
-      req._internal.resource = db(req.params.resource).filter(function (obj) {
+      var q = req.query.q.toLowerCase() // normalization
+      req._internal.resource = db(req.params.resource).filter(function (obj) { // filter return collection which key is true
         for (var key in obj) {
           var value = obj[key]
           if (_.isString(value) && value.toLowerCase().indexOf(q) !== -1) {
-            return true
+            return true // just find whether query existed ?
           }
         }
       })
@@ -172,9 +172,11 @@ module.exports = function (source) {
       req._internal.resource = db(req.params.resource).filter(req._internal.filters)
     }
     if (req._internal.resource) { // if there even is a resource found
+      // only match 1
       if (req._internal.filters.id && req._internal.resource.length === 1) {
         req._internal.resource = req._internal.resource[0]
       }
+      // matched many
       if (req._internal.resource.length !== 0) {
         return next()
       }
@@ -188,6 +190,7 @@ module.exports = function (source) {
     // Sort
     if (req._internal._sort) {
       req._internal._order = req._internal._order || 'ASC'
+      //  resource is a collection
       req._internal.resource = _.sortBy(req._internal.resource, function (element) {
         return element[req._internal._sort]
       })
@@ -198,7 +201,7 @@ module.exports = function (source) {
 
     // Slice result
     if (req._internal._end || req._internal._limit) {
-      res.setHeader('X-Total-Count', req._internal.resource.length)
+      res.setHeader('X-Total-Count', req._internal.resource.length) // why set length in header
       res.setHeader('Access-Control-Expose-Headers', 'X-Total-Count')
     }
     req._internal._start = parseInt(req._internal._start) || 0
@@ -217,8 +220,8 @@ module.exports = function (source) {
     for (var key in req.body) {
       req.body[key] = utils.toNative(req.body[key])
     }
-    var resource = db(req.params.resource)
-      .insert(req.body)
+    var resource = db(req.params.resource) // resource is db name
+      .insert(req.body) // insert mixin underscore-db method
     res.jsonp(resource)
   }
 
@@ -227,6 +230,10 @@ module.exports = function (source) {
   function update(req, res, next) {
     for (var key in req.body) {
       req.body[key] = utils.toNative(req.body[key])
+      // Turns string to native.
+      // Example:
+      //   'true' -> true
+      //   '1' -> 1
     }
     var resource = db(req.params.resource)
       .update(utils.toNative(req._internal.filters.id), req.body)
@@ -252,7 +259,7 @@ module.exports = function (source) {
 
   router.get('/db', showDatabase)
 
-  router.route('/:resource*')
+  router.route('/:resource*') // entry function dispatch business logic
     .get(parse, find, present)
     .post(parse, create)
     .put(parse, update)

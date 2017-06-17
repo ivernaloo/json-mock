@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// excute node cmd
 var updateNotifier = require('update-notifier')
 var _db = require('underscore-db')
 var yargs = require('yargs')
@@ -51,7 +52,7 @@ function start(object, filename) {
 
   process.stdin.resume()
   process.stdin.setEncoding('utf8')
-  process.stdin.on('data', function (chunk) {
+  process.stdin.on('data', function (chunk) { // snapshot to instance and store as a database
     if (chunk.trim().toLowerCase() === 's') {
       var file = 'db-' + Date.now() + '.json'
       _db.save(object, file)
@@ -66,9 +67,9 @@ function start(object, filename) {
   }
 
   var server = jsonServer.create()
-  server.use(jsonServer.defaults)
-  server.use(router)
-  server.listen(port, argv.host)
+  server.use(jsonServer.defaults) // call middleware
+  server.use(router)  // call the router
+  server.listen(port, argv.host) // bind port
 }
 
 // Set file and port
